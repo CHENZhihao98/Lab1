@@ -1,16 +1,7 @@
-name: "Security — Gitleaks"
+name: "Détection de secrets — Gitleaks"
 
 on: [push, pull_request]
 
 jobs:
   gitleaks:
-    name: "Gitleaks — Détection de secrets"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0   # obligatoire pour scanner tout l'historique git
-
-      # TODO : ajouter l'action Gitleaks ici
-      # Action  : gitleaks/gitleaks-action@v2
-      # Env var : GITHUB_TOKEN
+    # à compléter

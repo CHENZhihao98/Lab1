@@ -1,5 +1,7 @@
 __pycache__/
 *.pyc
-shop.db
 freemobile.db
 .venv/
+.env
+.secrets.baseline
+gitleaks-report.json

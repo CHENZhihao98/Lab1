@@ -1,6 +1,2 @@
-# FAILLE — versions anciennes avec CVE connues (détectées par pip-audit + Trivy)
-flask==2.0.1
-requests==2.19.1
-PyYAML==5.1
-Werkzeug==2.0.1
-urllib3==1.23
+flask==2.3.3
+python-dotenv==1.0.0

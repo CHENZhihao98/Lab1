@@ -101,6 +101,7 @@ def make_jwt(payload: dict) -> str:
 # ROUTES API — FAILLES À DÉTECTER ET CORRIGER (Objectifs 1 & 3)
 # =============================================================================
 
+
 @app.route("/subscriber/search")
 def subscriber_search():
     # FAILLE — SQL injection sur le MSISDN (numéro mobile)
@@ -219,6 +220,9 @@ def health():
 
 # ─── PAGE D'ACCUEIL ───────────────────────────────────────────────────────────
 
+
+# ─── PAGE D'ACCUEIL ───────────────────────────────────────────────────────────
+
 @app.route("/")
 def index():
     return render_template_string("""<!DOCTYPE html>
@@ -227,162 +231,45 @@ def index():
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Free Mobile — DevSecOps Lab 1</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    :root {
-      --red: #E2001A;
-      --dark: #111318;
-      --card: #1C1F26;
-      --border: #2A2D35;
-      --text: #E8EAF0;
-      --muted: #7A7F8E;
-      --green: #22C55E;
-      --orange: #F97316;
-      --blue: #3B82F6;
-    }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { background:var(--dark); color:var(--text); font-family:'Inter',sans-serif;
-           min-height:100vh; padding:32px 20px; }
-    .topbar { display:flex; align-items:center; gap:16px; margin-bottom:40px; max-width:1000px; margin-left:auto; margin-right:auto; }
-    .logo { background:var(--red); color:#fff; font-weight:700; font-size:1.1rem;
-            padding:8px 18px; border-radius:6px; letter-spacing:.5px; }
-    .topbar-title { font-size:.9rem; color:var(--muted); font-weight:400; }
-    .topbar-badge { margin-left:auto; background:#1a1a2a; border:1px solid var(--border);
-                    color:var(--muted); font-size:.72rem; padding:4px 12px; border-radius:20px; }
-    .container { max-width:1000px; margin:0 auto; }
-    .alert { background:#1a0a0a; border:1px solid #7a1a1a; border-left:4px solid var(--red);
-             padding:14px 18px; border-radius:6px; margin-bottom:32px;
-             font-size:.78rem; color:#ffaaaa; line-height:1.8; }
-    .alert strong { color:var(--red); }
-    .grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:32px; }
-    .stat-card { background:var(--card); border:1px solid var(--border); border-radius:8px;
-                 padding:20px 24px; }
-    .stat-label { font-size:.7rem; color:var(--muted); text-transform:uppercase;
-                  letter-spacing:.8px; margin-bottom:8px; }
-    .stat-value { font-size:1.8rem; font-weight:700; }
-    .stat-sub { font-size:.72rem; color:var(--muted); margin-top:4px; }
-    .red-val { color:var(--red); }
-    .grn-val { color:var(--green); }
-    .section-title { font-size:.75rem; font-weight:600; color:var(--muted);
-                     text-transform:uppercase; letter-spacing:.8px; margin-bottom:12px; }
-    .table-card { background:var(--card); border:1px solid var(--border); border-radius:8px;
-                  overflow:hidden; margin-bottom:24px; }
-    table { width:100%; border-collapse:collapse; font-size:.78rem; }
-    th { padding:11px 16px; text-align:left; font-size:.68rem; font-weight:600;
-         color:var(--muted); text-transform:uppercase; letter-spacing:.6px;
-         border-bottom:1px solid var(--border); background:#161820; }
-    td { padding:11px 16px; border-bottom:1px solid var(--border); }
-    tr:last-child td { border-bottom:none; }
-    tr:hover td { background:#ffffff06; }
-    td a { color:var(--blue); text-decoration:none; font-family:monospace; font-size:.75rem; }
-    td a:hover { text-decoration:underline; }
-    .badge { display:inline-block; font-size:.65rem; font-weight:600; padding:2px 8px;
-             border-radius:4px; }
-    .badge-red    { background:#7a1a1a; color:#ffaaaa; }
-    .badge-green  { background:#14532d; color:#86efac; }
-    .badge-orange { background:#7c2d12; color:#fdba74; }
-    .footer { text-align:center; font-size:.7rem; color:var(--muted); margin-top:32px;
-              padding-top:24px; border-top:1px solid var(--border); }
-    .footer span { color:var(--red); }
+    :root{--red:#E2001A;--dark:#0f1117;--surface:#161b22;--border:#21262d;--text:#c9d1d9;--muted:#8b949e;--blue:#58a6ff}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:var(--dark);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px}
+    .logo{background:var(--red);color:#fff;font-weight:700;font-size:1.1rem;padding:8px 20px;border-radius:6px;letter-spacing:.4px;margin-bottom:24px}
+    h1{font-size:1.4rem;font-weight:600;color:#fff;margin-bottom:8px;text-align:center}
+    .sub{color:var(--muted);font-size:.85rem;text-align:center;margin-bottom:40px}
+    .cards{display:flex;gap:16px;flex-wrap:wrap;justify-content:center}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px 28px;text-decoration:none;color:var(--text);min-width:180px;text-align:center;transition:border-color .2s}
+    .card:hover{border-color:var(--blue)}
+    .card-icon{font-size:1.6rem;margin-bottom:10px}
+    .card-title{font-size:.88rem;font-weight:600;color:#fff;margin-bottom:4px}
+    .card-sub{font-size:.74rem;color:var(--muted)}
+    .footer{margin-top:48px;font-size:.72rem;color:var(--muted)}
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <div class="logo">Free Mobile</div>
-    <span class="topbar-title">Internal Network & Subscriber API</span>
-    <span class="topbar-badge">ENV: PRODUCTION ⚠</span>
+  <div class="logo">Free Mobile</div>
+  <h1>DevSecOps Lab 1</h1>
+  <p class="sub">API interne vulnérable — Formation détection de secrets &amp; CI/CD</p>
+  <div class="cards">
+    <a class="card" href="/tp">
+      <div class="card-icon">📋</div>
+      <div class="card-title">Guide du Lab</div>
+      <div class="card-sub">Étapes, objectifs, livrables</div>
+    </a>
+    <a class="card" href="/ip-manager">
+      <div class="card-icon">🌐</div>
+      <div class="card-title">IP Manager</div>
+      <div class="card-sub">Outil FAI — clé exposée</div>
+    </a>
+    <a class="card" href="https://github.com/RomdhaniYacine/Lab1" target="_blank">
+      <div class="card-icon">⚙️</div>
+      <div class="card-title">GitHub</div>
+      <div class="card-sub">Code source &amp; pipeline CI</div>
+    </a>
   </div>
-
-  <div class="container">
-    <div class="alert">
-      <strong>ATTENTION — LAB DEVSECOPS :</strong> Cette API contient des secrets et des failles
-      intentionnels simulant une erreur réelle de développeur. Objectif : les détecter avec
-      Gitleaks &amp; TruffleHog, construire le pipeline CI, et corriger le code.
-    </div>
-
-    <div class="grid">
-      <div class="stat-card">
-        <div class="stat-label">Abonnés actifs</div>
-        <div class="stat-value grn-val">28 400 000</div>
-        <div class="stat-sub">Données exposées si SQL injection</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Secrets dans le code</div>
-        <div class="stat-value red-val">5</div>
-        <div class="stat-sub">Détectables par Gitleaks + TruffleHog</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Jobs CI à compléter</div>
-        <div class="stat-value" style="color:#F97316">5</div>
-        <div class="stat-sub">Gitleaks · TruffleHog · Semgrep · pip-audit · Trivy</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Antennes réseau</div>
-        <div class="stat-value grn-val">47 800</div>
-        <div class="stat-sub">Sites 4G/5G en France métropolitaine</div>
-      </div>
-    </div>
-
-    <p class="section-title">Endpoints API</p>
-    <div class="table-card">
-      <table>
-        <tr><th>Route</th><th>Exemple</th><th>Faille</th></tr>
-        <tr>
-          <td>/subscriber/search</td>
-          <td><a href="/subscriber/search?msisdn=0612345678">/subscriber/search?msisdn=0612345678</a></td>
-          <td><span class="badge badge-red">SQL Injection</span></td>
-        </tr>
-        <tr>
-          <td>/sim/info</td>
-          <td><a href="/sim/info?iccid=8933150319080167234">/sim/info?iccid=8933150319080167234</a></td>
-          <td><span class="badge badge-green">OK</span></td>
-        </tr>
-        <tr>
-          <td>/network/cell</td>
-          <td><a href="/network/cell?id=FR-5G-75001">/network/cell?id=FR-5G-75001</a></td>
-          <td><span class="badge badge-green">OK</span></td>
-        </tr>
-        <tr>
-          <td>/auth/token</td>
-          <td><a href="/auth/token?msisdn=0612345678">/auth/token?msisdn=0612345678</a></td>
-          <td><span class="badge badge-red">JWT Secret exposé</span></td>
-        </tr>
-        <tr>
-          <td>/internal/config</td>
-          <td><a href="/internal/config">/internal/config</a></td>
-          <td><span class="badge badge-red">Credentials prod</span></td>
-        </tr>
-        <tr>
-          <td>/cdr/storage</td>
-          <td><a href="/cdr/storage">/cdr/storage</a></td>
-          <td><span class="badge badge-red">Clés AWS exposées</span></td>
-        </tr>
-        <tr>
-          <td>/health</td>
-          <td><a href="/health">/health</a></td>
-          <td><span class="badge badge-orange">Fuite RGPD</span></td>
-        </tr>
-      </table>
-    </div>
-
-    <p class="section-title">Secrets à détecter</p>
-    <div class="table-card">
-      <table>
-        <tr><th>#</th><th>Variable</th><th>Type</th><th>Impact</th><th>Outil</th></tr>
-        <tr><td>1</td><td>PROVISIONING_TOKEN</td><td>Token API réseau</td><td>Accès provisioning SIM</td><td>Gitleaks</td></tr>
-        <tr><td>2</td><td>JWT_SECRET</td><td>Clé signature JWT</td><td>Forge sessions abonnés</td><td>TruffleHog</td></tr>
-        <tr><td>3</td><td>CDR_DB_PASSWORD</td><td>Password MySQL</td><td>Accès CDR production</td><td>Gitleaks</td></tr>
-        <tr><td>4</td><td>AWS_ACCESS_KEY_ID</td><td>Credentials AWS</td><td>Accès stockage CDR S3</td><td>Gitleaks + TruffleHog</td></tr>
-        <tr><td>5</td><td>MVNO_PARTNER_KEY</td><td>Clé partenaire MVNO</td><td>Accès API partenaires</td><td>TruffleHog (entropie)</td></tr>
-      </table>
-    </div>
-
-    <div class="footer">
-      Free Mobile — DevSecOps Lab 1 &nbsp;·&nbsp;
-      Formateur : <span>Yacine Romdhani</span> &nbsp;·&nbsp;
-      <a href="https://github.com/RomdhaniYacine/Lab1" style="color:#3B82F6">GitHub</a>
-    </div>
-  </div>
+  <div class="footer">app.py — 5 secrets hardcodés · 5 jobs CI à compléter</div>
 </body>
 </html>""")
 
@@ -637,7 +524,6 @@ function setIp(ip) {
 </html>""", ip=ip, data=data, error=error, api_key=IP_MGMT_API_KEY, quick_ips=QUICK_IPS)
 
 
-@app.route("/tp")
 
 @app.route("/tp")
 def tp():
@@ -655,7 +541,7 @@ def tp():
     body{background:var(--dark);color:var(--text);font-family:'Inter',sans-serif;font-size:.88rem;line-height:1.7;min-height:100vh}
     .topbar{background:#0d1117ee;backdrop-filter:blur(12px);border-bottom:1px solid var(--border);
             padding:12px 28px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
-    .logo{background:var(--red);color:#fff;font-weight:700;font-size:.85rem;padding:5px 14px;border-radius:5px;letter-spacing:.3px}
+    .logo{background:var(--red);color:#fff;font-weight:700;font-size:.85rem;padding:5px 14px;border-radius:5px}
     .topbar-right{margin-left:auto;display:flex;gap:16px;align-items:center}
     .topbar-right a{color:var(--blue);font-size:.78rem;text-decoration:none}
     .container{max-width:860px;margin:0 auto;padding:48px 28px}
@@ -665,8 +551,9 @@ def tp():
     .meta-item strong{color:var(--text)}
     h2{font-size:1rem;font-weight:600;color:#fff;margin:40px 0 12px;display:flex;align-items:center;gap:10px}
     h2 .step-num{background:var(--red);color:#fff;font-size:.72rem;padding:2px 8px;border-radius:4px;font-weight:700}
+    h2 .step-opt{background:#1f3a1f;color:var(--green);font-size:.68rem;padding:2px 8px;border-radius:4px;font-weight:600}
     h3{font-size:.88rem;font-weight:600;color:var(--blue);margin:20px 0 10px}
-    p{margin-bottom:12px;color:var(--text)}
+    p{margin-bottom:12px}
     ul,ol{margin:0 0 16px 20px}
     li{margin-bottom:6px}
     pre{background:var(--code);border:1px solid var(--border);border-radius:8px;
@@ -674,25 +561,25 @@ def tp():
     code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:var(--code);
          padding:2px 6px;border-radius:4px;color:#a5d6ff;border:1px solid var(--border)}
     .objective-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px 24px;margin-bottom:32px}
-    .objective-box ol{margin:10px 0 0 18px}
-    .objective-box li{color:var(--text);margin-bottom:8px}
     .info-box{background:#111d2e;border:1px solid #1f6feb;border-left:4px solid #58a6ff;
               border-radius:0 8px 8px 0;padding:14px 18px;margin:16px 0;font-size:.82rem;color:#a5d6ff}
     .warn-box{background:#1a0e00;border:1px solid #7a4a00;border-left:4px solid var(--orange);
               border-radius:0 8px 8px 0;padding:14px 18px;margin:16px 0;font-size:.82rem;color:var(--orange)}
-    .question-box{background:#0d1f0d;border:1px solid #238636;border-radius:8px;
-                  padding:16px 20px;margin:16px 0}
+    .question-box{background:#0d1f0d;border:1px solid #238636;border-radius:8px;padding:16px 20px;margin:16px 0}
     .question-box .q-title{font-size:.72rem;color:var(--green);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
     .question-box ul{margin:0 0 0 16px}
     .question-box li{color:var(--text);margin-bottom:6px;font-size:.84rem}
+    .job-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:16px;overflow:hidden}
+    .job-header{padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;background:#0d1117}
+    .job-num{background:var(--red);color:#fff;font-size:.68rem;padding:2px 8px;border-radius:4px;font-weight:700;min-width:24px;text-align:center}
+    .job-name{font-weight:600;color:#fff;font-size:.88rem}
+    .job-desc{color:var(--muted);font-size:.76rem;margin-left:auto}
+    .job-body{padding:16px 18px}
     .section-divider{border:none;border-top:1px solid var(--border);margin:40px 0}
     .livrable-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px 24px}
-    .livrable-box ol{margin:10px 0 0 18px}
-    .livrable-box li{margin-bottom:8px}
-    .retenir{background:#0f1117;border:1px solid var(--red);border-radius:8px;padding:20px 24px;margin-top:40px;font-size:.84rem;color:var(--text);line-height:1.8}
+    .retenir{background:#0f1117;border:1px solid var(--red);border-radius:8px;padding:20px 24px;margin-top:40px;font-size:.84rem;line-height:1.8}
     .retenir strong{color:var(--red)}
-    .footer{text-align:center;padding:40px 0 24px;border-top:1px solid var(--border);
-            font-size:.72rem;color:var(--muted);margin-top:48px}
+    .footer{text-align:center;padding:40px 0 24px;border-top:1px solid var(--border);font-size:.72rem;color:var(--muted);margin-top:48px}
     .footer a{color:var(--blue);text-decoration:none}
   </style>
 </head>
@@ -722,22 +609,19 @@ def tp():
       <li>Détecter un secret présent dans le code source avec un scanner automatique.</li>
       <li>Mettre en place un pre-commit hook qui bloque un commit contenant un secret avant qu'il ne soit créé.</li>
       <li>Comprendre qu'un secret supprimé du code reste présent dans l'historique Git, et savoir comment réagir.</li>
+      <li>Compléter un pipeline CI GitHub Actions qui automatise la détection à chaque push.</li>
     </ol>
   </div>
 
   <hr class="section-divider">
 
-  <!-- ÉTAPE 0 -->
   <h2><span class="step-num">0</span> Prise en main</h2>
-  <p>Clonez le projet et lancez l'API :</p>
   <pre>git clone https://github.com/RomdhaniYacine/Lab1.git
 cd Lab1
 pip3 install -r requirements.txt
 python3 app.py</pre>
-  <p>Ouvrez <strong>http://localhost:5000</strong> — vous verrez le tableau de bord de l'API Free Mobile.</p>
-  <p>Parcourez <code>app.py</code>. Les premières lignes contiennent le code de production livré par l'équipe externe.</p>
+  <p>Ouvrez <strong>http://localhost:5000</strong> puis parcourez <code>app.py</code> — les premières lignes contiennent le code livré par l'équipe externe.</p>
 
-  <!-- ÉTAPE 1 -->
   <h2><span class="step-num">1</span> Détecter les secrets dans le code</h2>
   <p>Des credentials sont écrits en dur dans <code>app.py</code> :</p>
   <pre>PROVISIONING_TOKEN = "freemobile_prov_api_4f8a2c1e9b3d7f05"
@@ -747,7 +631,6 @@ AWS_ACCESS_KEY_ID  = "LAB_AKIAIOSFODNN7FREEMOB"
 MVNO_PARTNER_KEY   = "mvno_partner_key_9e8d7c6b5a4f3210"</pre>
   <p>Lancez un scan du dépôt :</p>
   <pre>gitleaks detect --source . --verbose</pre>
-
   <div class="question-box">
     <div class="q-title">Questions</div>
     <ul>
@@ -755,64 +638,37 @@ MVNO_PARTNER_KEY   = "mvno_partner_key_9e8d7c6b5a4f3210"</pre>
       <li>Quel code de sortie renvoie Gitleaks ? (<code>echo $?</code> — 0 = rien trouvé, 1 = secret détecté.)</li>
     </ul>
   </div>
+  <div class="info-box">💡 Ce code de sortie est exactement ce qu'utilisera le pipeline CI pour faire échouer un build.</div>
 
-  <div class="info-box">
-    💡 Ce code de sortie est exactement ce qu'utilisera un pipeline CI pour faire échouer un build.
-  </div>
-
-  <!-- ÉTAPE 2 -->
   <h2><span class="step-num">2</span> Prévenir : bloquer le commit avant qu'il n'arrive</h2>
-  <p>Détecter après coup, c'est du nettoyage. L'objectif du <em>shift left</em> est d'empêcher la fuite dès le poste du développeur.</p>
-
   <h3>2.1 Installer le hook Git</h3>
-  <p>Créez le fichier <code>.git/hooks/pre-commit</code> :</p>
   <pre>#!/bin/sh
 gitleaks protect --staged --verbose</pre>
-  <p>Rendez-le exécutable :</p>
   <pre>chmod +x .git/hooks/pre-commit</pre>
-  <p><code>gitleaks protect --staged</code> analyse uniquement ce qui est mis en stage (<code>git add</code>), donc le contenu sur le point d'être committé.</p>
-
   <h3>2.2 Tester le blocage</h3>
-  <p>Ajoutez une nouvelle clé fictive dans <code>app.py</code> :</p>
+  <p>Ajoutez une clé fictive dans <code>app.py</code> :</p>
   <pre>STRIPE_KEY = "sk_live_4eC39HqLyjWDarjtT1zdp7dc"  # fictive</pre>
-  <p>Tentez de committer :</p>
   <pre>git add app.py
 git commit -m "Add payment integration"</pre>
-
   <div class="question-box">
     <div class="q-title">Question</div>
-    <ul>
-      <li>Le commit aboutit-il ? Que se passe-t-il ? Notez le message renvoyé par le hook.</li>
-    </ul>
+    <ul><li>Le commit aboutit-il ? Notez le message renvoyé par le hook.</li></ul>
   </div>
-
   <p>Retirez ensuite la ligne sans la committer.</p>
+  <div class="info-box">💡 <strong>Variante entreprise :</strong> utiliser le framework <code>pre-commit</code> avec un <code>.pre-commit-config.yaml</code> — le hook est versionné et partagé par toute l'équipe.</div>
 
-  <div class="info-box">
-    💡 <strong>Variante recommandée en entreprise :</strong> utiliser le framework <code>pre-commit</code> avec un <code>.pre-commit-config.yaml</code> qui appelle Gitleaks. C'est plus portable — le hook est versionné et partagé par toute l'équipe.
-  </div>
-
-  <!-- ÉTAPE 3 -->
   <h2><span class="step-num">3</span> La vérité qui dérange : le secret est toujours dans l'historique</h2>
-  <p>Le hook est en place, mais les secrets de l'Étape 1 ont été commités avant que le hook n'existe.</p>
-
   <h3>3.1 Corriger le code actuel</h3>
-  <p>Remplacez les secrets par des variables d'environnement dans <code>app.py</code> :</p>
   <pre>import os
-
 PROVISIONING_TOKEN = os.environ.get("PROVISIONING_TOKEN", "")
 JWT_SECRET         = os.environ.get("JWT_SECRET", "")
 CDR_DB_PASSWORD    = os.environ.get("CDR_DB_PASSWORD", "")
 AWS_ACCESS_KEY_ID  = os.environ.get("AWS_ACCESS_KEY_ID", "")
 MVNO_PARTNER_KEY   = os.environ.get("MVNO_PARTNER_KEY", "")</pre>
-  <p>Committez ce correctif :</p>
   <pre>git add app.py
 git commit -m "Fix: secrets déplacés en variables d'environnement"</pre>
-
   <h3>3.2 Scanner tout l'historique</h3>
   <pre>gitleaks detect --source . --verbose</pre>
-  <p>Par défaut, <code>gitleaks detect</code> parcourt l'ensemble de l'historique Git — pas seulement l'état actuel des fichiers.</p>
-
   <div class="question-box">
     <div class="q-title">Questions</div>
     <ul>
@@ -821,36 +677,118 @@ git commit -m "Fix: secrets déplacés en variables d'environnement"</pre>
     </ul>
   </div>
 
-  <!-- ÉTAPE 4 -->
-  <h2><span class="step-num">4</span> Remédiation : que faire face à un secret leaké ?</h2>
+  <h2><span class="step-num">4</span> Remédiation</h2>
   <ol style="margin:0 0 16px 20px">
-    <li style="margin-bottom:12px"><strong style="color:#fff">La première action est toujours la rotation.</strong> Un secret committé doit être considéré compromis. La seule remédiation fiable est de révoquer et régénérer la clé côté fournisseur. Supprimer du code ne dé-fuite rien.</li>
-    <li style="margin-bottom:12px"><strong style="color:#fff">Nettoyer l'historique est possible mais coûteux.</strong> Des outils comme <code>git filter-repo</code> ou BFG Repo-Cleaner permettent de purger un secret, mais ils réécrivent l'historique — tous les clones existants deviennent incohérents.</li>
-    <li><strong style="color:#fff">La prévention est la seule option vraiment économique</strong> — d'où l'intérêt du hook de l'Étape 2.</li>
+    <li style="margin-bottom:12px"><strong style="color:#fff">Toujours révoquer d'abord.</strong> Un secret committé est compromis. Régénérez la clé côté fournisseur — supprimer du code ne dé-fuite rien.</li>
+    <li style="margin-bottom:12px"><strong style="color:#fff">Nettoyer l'historique est coûteux.</strong> <code>git filter-repo</code> ou BFG Repo-Cleaner purgent l'historique mais le réécrivent — tous les clones existants deviennent incohérents.</li>
+    <li><strong style="color:#fff">Prévenir coûte moins cher</strong> — d'où le hook de l'Étape 2.</li>
   </ol>
 
   <hr class="section-divider">
 
-  <!-- LIVRABLES -->
+  <h2><span class="step-num" style="background:#1f6feb">CI</span> Pipeline GitHub Actions <span class="step-opt">optionnel</span></h2>
+  <p>Ouvrez <code>.github/workflows/security.yml</code>. Le fichier contient <strong>5 jobs avec des TODO</strong> à compléter. Chaque job fait échouer le build automatiquement si une faille est détectée.</p>
+
+  <div class="job-card">
+    <div class="job-header">
+      <span class="job-num">1</span>
+      <span class="job-name">Gitleaks</span>
+      <span class="job-desc">Secrets dans le code source</span>
+    </div>
+    <div class="job-body">
+      <p>Remplacez le <code># TODO</code> par :</p>
+      <pre>- uses: gitleaks/gitleaks-action@v2
+  env:
+    GITHUB_TOKEN: ${{ '{{' }} secrets.GITHUB_TOKEN {{ '}}' }}</pre>
+    </div>
+  </div>
+
+  <div class="job-card">
+    <div class="job-header">
+      <span class="job-num">2</span>
+      <span class="job-name">TruffleHog</span>
+      <span class="job-desc">Secrets dans tout l'historique git</span>
+    </div>
+    <div class="job-body">
+      <pre>- uses: trufflesecurity/trufflehog@main
+  with:
+    path: ./
+    base: ${{ '{{' }} github.event.repository.default_branch {{ '}}' }}
+    extra_args: --only-verified</pre>
+    </div>
+  </div>
+
+  <div class="job-card">
+    <div class="job-header">
+      <span class="job-num">3</span>
+      <span class="job-name">Semgrep</span>
+      <span class="job-desc">SQL injection, debug=True, mauvaises pratiques</span>
+    </div>
+    <div class="job-body">
+      <p>Ajoutez le container et la commande :</p>
+      <pre>    container:
+      image: returntocorp/semgrep
+    steps:
+      - uses: actions/checkout@v4
+      - run: semgrep --config "p/python" --config "p/security-audit" --error .</pre>
+    </div>
+  </div>
+
+  <div class="job-card">
+    <div class="job-header">
+      <span class="job-num">4</span>
+      <span class="job-name">pip-audit</span>
+      <span class="job-desc">CVE dans les dépendances Python</span>
+    </div>
+    <div class="job-body">
+      <pre>- uses: actions/setup-python@v5
+  with:
+    python-version: "3.11"
+- run: pip install pip-audit && pip-audit -r requirements.txt</pre>
+    </div>
+  </div>
+
+  <div class="job-card">
+    <div class="job-header">
+      <span class="job-num">5</span>
+      <span class="job-name">Trivy</span>
+      <span class="job-desc">CVE HIGH/CRITICAL dans l'image Docker</span>
+    </div>
+    <div class="job-body">
+      <pre>- run: docker build -t free-lab:ci .
+- uses: aquasecurity/trivy-action@master
+  with:
+    image-ref: free-lab:ci
+    severity: HIGH,CRITICAL
+    exit-code: "1"
+    ignore-unfixed: true</pre>
+    </div>
+  </div>
+
+  <div class="info-box">
+    💡 Pushez votre pipeline complété et observez les résultats sur
+    <a href="https://github.com/RomdhaniYacine/Lab1/actions" target="_blank" style="color:#58a6ff">github.com/RomdhaniYacine/Lab1/actions</a>
+  </div>
+
+  <hr class="section-divider">
+
   <h2>Livrables attendus</h2>
   <div class="livrable-box">
     <ol>
       <li>La sortie de <code>gitleaks detect</code> de l'Étape 1 (secrets détectés).</li>
       <li>Une capture du message de blocage du commit à l'Étape 2.</li>
-      <li>La sortie de <code>gitleaks detect</code> de l'Étape 3 prouvant que les secrets persistent dans l'historique malgré le correctif.</li>
+      <li>La sortie de <code>gitleaks detect</code> de l'Étape 3 prouvant que les secrets persistent dans l'historique.</li>
       <li>Vos réponses aux questions des étapes 1, 2 et 3.</li>
     </ol>
   </div>
 
-  <!-- POUR ALLER PLUS LOIN -->
-  <h2>Pour aller plus loin (optionnel)</h2>
+  <h2>Pour aller plus loin</h2>
   <ul>
-    <li>Intégrer Gitleaks dans le pipeline CI GitHub Actions (voir <code>.github/workflows/security.yml</code>).</li>
-    <li>Tester <code>trufflehog git file://.</code> et comparer ses résultats à ceux de Gitleaks.</li>
-    <li>Mettre en place le framework <code>pre-commit</code> partagé pour toute l'équipe.</li>
+    <li>Compléter les 5 jobs du pipeline CI (<code>.github/workflows/security.yml</code>).</li>
+    <li>Tester <code>trufflehog git file://.</code> et comparer à Gitleaks.</li>
+    <li>Mettre en place <code>pre-commit</code> partagé via <code>.pre-commit-config.yaml</code>.</li>
   </ul>
 
-  <!-- À RETENIR -->
   <div class="retenir">
     <strong>À retenir —</strong> Supprimer un secret ≠ annuler la fuite. Git n'oublie rien. Une fois poussé, un secret est compromis : on le révoque, on ne se contente pas de le supprimer. Le meilleur secret leaké est celui qui n'a jamais quitté le poste du développeur — grâce à un hook.
   </div>

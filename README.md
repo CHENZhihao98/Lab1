@@ -182,11 +182,63 @@ Par défaut, `gitleaks detect` parcourt l'ensemble de l'historique Git — pas s
 
 ---
 
-## Pour aller plus loin (optionnel)
+## Pipeline CI GitHub Actions (optionnel)
 
-- Intégrer Gitleaks dans le pipeline CI GitHub Actions (voir `.github/workflows/security.yml`).
+Ouvrez `.github/workflows/security.yml` — 5 jobs avec des `TODO` à compléter.
+Chaque job fait échouer le build si une faille est détectée.
+
+**Job 1 — Gitleaks** (secrets dans le code)
+```yaml
+- uses: gitleaks/gitleaks-action@v2
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+**Job 2 — TruffleHog** (secrets dans tout l'historique git)
+```yaml
+- uses: trufflesecurity/trufflehog@main
+  with:
+    path: ./
+    base: ${{ github.event.repository.default_branch }}
+    extra_args: --only-verified
+```
+
+**Job 3 — Semgrep** (SQL injection, debug=True, mauvaises pratiques)
+```yaml
+    container:
+      image: returntocorp/semgrep
+    steps:
+      - uses: actions/checkout@v4
+      - run: semgrep --config "p/python" --config "p/security-audit" --error .
+```
+
+**Job 4 — pip-audit** (CVE dans les dépendances Python)
+```yaml
+- uses: actions/setup-python@v5
+  with:
+    python-version: "3.11"
+- run: pip install pip-audit && pip-audit -r requirements.txt
+```
+
+**Job 5 — Trivy** (CVE HIGH/CRITICAL dans l'image Docker)
+```yaml
+- run: docker build -t free-lab:ci .
+- uses: aquasecurity/trivy-action@master
+  with:
+    image-ref: free-lab:ci
+    severity: HIGH,CRITICAL
+    exit-code: "1"
+    ignore-unfixed: true
+```
+
+Pushez et observez sur **https://github.com/RomdhaniYacine/Lab1/actions**
+
+---
+
+## Pour aller plus loin
+
 - Tester `trufflehog git file://.` et comparer ses résultats à ceux de Gitleaks.
-- Mettre en place le framework `pre-commit` partagé pour toute l'équipe.
+- Mettre en place le framework `pre-commit` partagé via `.pre-commit-config.yaml`.
 
 ---
 

@@ -1,18 +1,18 @@
-# Lab 1 — Secrets Detection & Pipeline CI
+# Lab 1 — Secrets Detection & Pipeline CI/CD
 
-> **Contexte** : Un développeur Free a livré une API interne de gestion des abonnés.
-> En faisant la code review, vous découvrez que **5 types de credentials** ont été
-> commités directement dans le code source. Votre mission : les détecter avec les
-> outils CI, comprendre leur impact, et les corriger proprement.
+> **Contexte** : Vous êtes développeur chez Free Mobile.
+> Une API interne de gestion des abonnés et du réseau vient d'être livrée par une équipe externe.
+> En faisant la code review, vous découvrez que **5 credentials de production** ont été commités
+> directement dans le code. Votre mission : les détecter, construire le pipeline CI, et corriger.
 
 ---
 
-## Objectifs
+## Objectifs pédagogiques
 
-- Identifier des secrets dans du code source
-- Comprendre la différence entre **Gitleaks** (patterns) et **TruffleHog** (entropie + historique)
+- Identifier des secrets dans du code source (tokens, passwords, clés AWS)
+- Comprendre la différence entre **Gitleaks** (patterns) et **TruffleHog** (entropie + historique git)
 - Comprendre pourquoi **supprimer un secret ne suffit pas** — il faut le révoquer
-- Faire passer un pipeline de 5 jobs du rouge au vert
+- Compléter un pipeline CI/CD de 5 jobs et le faire passer au vert
 
 ---
 
@@ -44,20 +44,21 @@ python3 app.py
 
 > Si `pip3` n'est pas reconnu, utilisez `pip` à la place.
 
-L'API tourne sur **http://localhost:5000**
+Ouvrez **http://localhost:5000** dans votre navigateur.
 
 ---
 
 ## Endpoints
 
-| Route | Exemple | Faille |
+| Route | Exemple | Statut |
 |-------|---------|--------|
-| `/subscriber` | `/subscriber?phone=0612345678` | SQL Injection |
-| `/auth/token` | `/auth/token?user_id=1` | JWT Secret exposé |
-| `/admin/config` | `/admin/config` | Tous les credentials en clair |
-| `/backup/status` | `/backup/status` | Clés AWS S3 exposées |
-| `/line-status` | `/line-status?id=FBX-29471` | OK |
-| `/health` | `/health` | Fuite RGPD |
+| `/subscriber/search` | `?msisdn=0612345678` | SQL Injection |
+| `/sim/info` | `?iccid=8933150319080167234` | OK |
+| `/network/cell` | `?id=FR-5G-75001` | OK |
+| `/auth/token` | `?msisdn=0612345678` | JWT Secret exposé |
+| `/internal/config` | — | Tous les credentials |
+| `/cdr/storage` | — | Clés AWS exposées |
+| `/health` | — | Fuite RGPD |
 
 ---
 
@@ -65,180 +66,137 @@ L'API tourne sur **http://localhost:5000**
 
 ```
 Lab1/
-├── app.py                      ← API Flask vulnérable (point de départ)
-├── Dockerfile                  ← Image Docker vulnérable
-├── requirements.txt            ← Dépendances avec CVE
-├── docker-compose.yml          ← Lancement via Docker
-├── solution/                   ← Code corrigé (à ouvrir APRÈS avoir essayé)
-│   ├── app.py
-│   ├── Dockerfile
-│   └── requirements.txt
-└── .github/workflows/
-    └── security.yml            ← Pipeline CI (5 jobs de sécurité)
+├── app.py                          ← API Flask vulnérable (point de départ)
+├── Dockerfile                      ← Image Docker vulnérable
+├── requirements.txt                ← Dépendances avec CVE connues
+├── docker-compose.yml
+├── .github/workflows/
+│   └── security.yml                ← Pipeline CI à compléter (5 TODO)
+└── solution/
+    ├── app.py                      ← Code corrigé
+    ├── Dockerfile
+    └── requirements.txt
 ```
 
 ---
 
-## Acte 1 — Découverte des secrets (20 min)
+## Acte 1 — Audit du code (20 min)
 
-### 1.1 Inspecter le code source
+### 1.1 Identifier les 5 secrets
 
-Ouvrez `app.py` et cherchez les lignes marquées `# FAILLE`.
+Ouvrez `app.py`. Cherchez les commentaires `# FAILLE`.
 
-Identifiez les **5 secrets** présents dans le code :
+| # | Variable | Type | Impact si compromis |
+|---|----------|------|---------------------|
+| 1 | `PROVISIONING_TOKEN` | Token API réseau | Accès au provisioning SIM en production |
+| 2 | `JWT_SECRET` | Clé signature JWT | Forge de sessions abonnés |
+| 3 | `CDR_DB_PASSWORD` | Password MySQL | Accès aux CDR (enregistrements d'appels) prod |
+| 4 | `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` | Credentials AWS | Accès au stockage S3 des CDR |
+| 5 | `MVNO_PARTNER_KEY` | Clé partenaire | Accès API partenaires MVNO |
 
-| # | Variable | Type de secret | Impact si compromis |
-|---|----------|---------------|---------------------|
-| 1 | `FREE_INTERNAL_TOKEN` | Token API interne | Accès aux systèmes internes Free |
-| 2 | `JWT_SECRET` | Clé de signature JWT | Forge de sessions abonnés |
-| 3 | `DB_PASSWORD` | Mot de passe MySQL prod | Accès direct à la base de production |
-| 4 | `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` | Credentials AWS | Accès aux backups de facturation S3 |
-| 5 | `OAUTH2_CLIENT_SECRET` | Secret OAuth2 | Compromission du SSO Free |
-
-### 1.2 Tester l'exposition des secrets
+### 1.2 Tester les failles en live
 
 ```bash
-# Voir tous les credentials exposés dans /admin/config
-curl http://localhost:5000/admin/config
+# Voir tous les credentials exposés
+curl http://localhost:5000/internal/config
 
-# Voir les clés AWS dans /backup/status
-curl http://localhost:5000/backup/status
+# Voir les clés AWS des CDR
+curl http://localhost:5000/cdr/storage
 
 # Générer un JWT signé avec le secret hardcodé
-curl "http://localhost:5000/auth/token?user_id=1"
+curl "http://localhost:5000/auth/token?msisdn=0612345678"
 ```
 
-### 1.3 Exploiter la faille SQL
+### 1.3 Exploiter la SQL injection
 
 ```bash
-# Requête normale — retourne 1 abonné
-curl "http://localhost:5000/subscriber?phone=0612345678"
+# Requête normale — 1 abonné
+curl "http://localhost:5000/subscriber/search?msisdn=0612345678"
 
-# Injection SQL — retourne TOUS les abonnés
-curl "http://localhost:5000/subscriber?phone=0612345678' OR '1'='1"
+# SQL injection — tous les abonnés
+curl "http://localhost:5000/subscriber/search?msisdn=0612345678' OR '1'='1"
 ```
 
-En production chez Free, cette requête exposerait des **millions d'abonnés** : noms, emails, plans, consommation data.
+En production chez Free Mobile : **28 400 000 abonnés exposés** (nom, email, MSISDN, ICCID, plan).
 
 ---
 
-## Acte 2 — Construire le pipeline CI (20 min)
+## Acte 2 — Construire le pipeline CI (25 min)
 
 ### 2.1 Votre mission
 
 Ouvrez `.github/workflows/security.yml`.
 
-Le pipeline contient **5 jobs avec des `TODO`**. Votre mission est de les compléter en vous appuyant sur les liens de documentation fournis dans chaque job.
+Le fichier contient la structure des **5 jobs avec des `TODO`**.
+Complétez chaque job en vous appuyant sur la documentation fournie dans les commentaires.
 
 | # | Job | Outil | Ce qu'il doit détecter |
 |---|-----|-------|------------------------|
-| 1 | Secrets (Gitleaks) | **Gitleaks** | Tokens, passwords, clés AWS dans le code |
-| 2 | Secrets historique (TruffleHog) | **TruffleHog** | Secrets dans tout l'historique git |
-| 3 | SAST (Semgrep) | **Semgrep** | Injection SQL, debug=True, mauvaises pratiques |
-| 4 | Dépendances (pip-audit) | **pip-audit** | CVE dans les dépendances Python |
-| 5 | Image conteneur (Trivy) | **Trivy** | CVE HIGH/CRITICAL dans l'image Docker |
+| 1 | Gitleaks | **Gitleaks** | Tokens, passwords, clés AWS dans le code |
+| 2 | TruffleHog | **TruffleHog** | Secrets dans tout l'historique git |
+| 3 | Semgrep | **Semgrep** | SQL injection, debug=True, mauvaises pratiques |
+| 4 | pip-audit | **pip-audit** | CVE dans les dépendances Python |
+| 5 | Trivy | **Trivy** | CVE HIGH/CRITICAL dans l'image Docker |
 
-Une fois complété, pushez et observez les jobs s'exécuter sur **https://github.com/RomdhaniYacine/Lab1/actions**
+Une fois complété, pushez et observez sur **https://github.com/RomdhaniYacine/Lab1/actions**
 
-### 2.2 Gitleaks vs TruffleHog — quelle différence ?
+### 2.2 Gitleaks vs TruffleHog
 
 | | Gitleaks | TruffleHog |
 |---|----------|-----------|
-| **Méthode** | Patterns regex connus (AWS, GitHub, etc.) | Entropie de Shannon + patterns + vérification |
+| **Méthode** | Regex sur patterns connus (AWS, GitHub, etc.) | Entropie de Shannon + patterns + vérification |
 | **Scope** | Code actuel | Code actuel + **tout l'historique git** |
-| **Force** | Rapide, peu de faux positifs | Détecte les secrets supprimés dans d'anciens commits |
-| **Cas d'usage** | Empêcher un commit | Auditer un repo existant |
+| **Point fort** | Rapide, peu de faux positifs | Détecte les secrets supprimés dans d'anciens commits |
+| **Usage** | Pre-commit hook, CI | Audit complet d'un dépôt |
 
-> **Règle d'or** : un secret committé dans git, même supprimé ensuite, reste dans l'historique.
-> Il faut **révoquer le secret** (changer le mot de passe, invalider le token), pas juste le supprimer.
+> **Règle d'or** : un secret dans l'historique git doit être **révoqué**, pas juste supprimé.
 
 ---
 
-## Acte 3 — Correction des secrets (40 min)
+## Acte 3 — Correction (40 min)
 
-### Fix #1 — Remplacer tous les secrets par des variables d'environnement
-
-Dans `app.py`, remplacez les valeurs en dur :
+### Fix #1 — Variables d'environnement
 
 ```python
-# Avant
-FREE_INTERNAL_TOKEN   = "freetelecom_internal_api_x7k9m2p4q1"
-JWT_SECRET            = "fr33-s3cr3t-jwt-pr0d-2024!"
-DB_PASSWORD           = "FreeProd@MySQL2024!"
-AWS_ACCESS_KEY_ID     = "AKIAIOSFODNN7FREETEL"
-AWS_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYFREETELECOM"
-OAUTH2_CLIENT_SECRET  = "oauth2_free_9f8e7d6c5b4a3210abcdef1234567890"
+# Avant (dangereux)
+PROVISIONING_TOKEN = "freemobile_prov_api_4f8a2c1e9b3d7f05"
+JWT_SECRET         = "fm-jwt-s1gn1ng-k3y-pr0d-2024!"
+CDR_DB_PASSWORD    = "Fr33M0b!leCDR@Prod2024"
+AWS_ACCESS_KEY_ID  = "AKIAIOSFODNN7FREEMOB"
+...
 
-# Après
-FREE_INTERNAL_TOKEN   = os.environ.get("FREE_INTERNAL_TOKEN", "")
-JWT_SECRET            = os.environ.get("JWT_SECRET", "")
-DB_PASSWORD           = os.environ.get("DB_PASSWORD", "")
-AWS_ACCESS_KEY_ID     = os.environ.get("AWS_ACCESS_KEY_ID", "")
-AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
-OAUTH2_CLIENT_SECRET  = os.environ.get("OAUTH2_CLIENT_SECRET", "")
+# Après (correct)
+PROVISIONING_TOKEN = os.environ.get("PROVISIONING_TOKEN", "")
+JWT_SECRET         = os.environ.get("JWT_SECRET", "")
+CDR_DB_PASSWORD    = os.environ.get("CDR_DB_PASSWORD", "")
+AWS_ACCESS_KEY_ID  = os.environ.get("AWS_ACCESS_KEY_ID", "")
+...
 ```
-
-Dans `docker-compose.yml`, décommentez la section `environment`.
 
 ```bash
-git add app.py docker-compose.yml
-git commit -m "fix: remplacer les secrets hardcodés par des variables d'environnement"
-git push
+git add app.py && git commit -m "fix: secrets déplacés en variables d'environnement" && git push
 ```
 
-Attendez la CI → **Gitleaks et TruffleHog passent au vert**.
-
----
-
-### Fix #2 — Corriger l'injection SQL
+### Fix #2 — Requête paramétrée
 
 ```python
 # Avant
-query = "SELECT ... FROM subscribers WHERE phone = '" + phone + "'"
+query = "SELECT ... FROM subscribers WHERE msisdn = '" + msisdn + "'"
 rows  = conn.execute(query).fetchall()
 
 # Après
 rows = conn.execute(
-    "SELECT id, phone, name, email, plan, data_used_gb FROM subscribers WHERE phone = ?",
-    (phone,)
+    "SELECT id,msisdn,iccid,name,email,plan,data_used_gb,status FROM subscribers WHERE msisdn = ?",
+    (msisdn,)
 ).fetchall()
 ```
 
-```bash
-git add app.py
-git commit -m "fix: requête paramétrée — injection SQL corrigée"
-git push
-```
+### Fix #3 — Supprimer les endpoints dangereux
 
-Attendez la CI → **Semgrep passe au vert**.
-
----
-
-### Fix #3 — Nettoyer /admin/config et /health
-
-`/admin/config` ne doit pas exister sans authentification. Supprimez l'endpoint ou protégez-le.
-
-`/health` ne doit retourner que le statut :
-
-```python
-@app.route("/health")
-def health():
-    return jsonify({"status": "ok"})
-```
-
-Désactivez aussi le mode debug :
-
-```python
-app.run(host="0.0.0.0", port=5000, debug=False)
-```
-
-```bash
-git add app.py
-git commit -m "fix: supprimer exposition config, RGPD et debug mode"
-git push
-```
-
----
+- `/internal/config` : supprimer ou protéger avec une authentification
+- `/cdr/storage` : ne jamais exposer les credentials AWS
+- `/health` : retourner uniquement `{"status": "ok"}`
+- `debug=False` dans `app.run()`
 
 ### Fix #4 — Mettre à jour les dépendances
 
@@ -249,84 +207,49 @@ PyYAML>=6.0.1
 Werkzeug>=3.0.0
 ```
 
-```bash
-git add requirements.txt
-git commit -m "fix: dépendances mises à jour — suppression CVE connues"
-git push
-```
-
-Attendez la CI → **pip-audit passe au vert**.
-
----
-
-### Fix #5 — Moderniser l'image Docker
+### Fix #5 — Image Docker sécurisée
 
 ```dockerfile
 FROM python:3.12-slim
-
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
-
 RUN adduser --disabled-password --gecos "" appuser
 USER appuser
-
 EXPOSE 5000
 CMD ["python", "app.py"]
 ```
 
-```bash
-git add Dockerfile
-git commit -m "fix: image python:3.12-slim et utilisateur non-root"
-git push
-```
-
-Attendez la CI → **Trivy passe au vert**.
-
 ---
 
-## Acte 4 — TruffleHog et l'historique git (20 min)
+## Acte 4 — TruffleHog et l'historique git (15 min)
 
-### 4.1 Démontrer que la suppression ne suffit pas
+### Démontrer que la suppression ne suffit pas
 
 ```bash
-# Créer un commit avec un faux secret
-echo 'BACKUP_TOKEN = "ghp_faketoken1234567890abcdef"' >> app.py
-git add app.py && git commit -m "test: ajout token temporaire"
+# Ajouter un faux token dans le code
+echo 'TEMP_TOKEN = "ghp_fakeGitHubToken1234567890abc"' >> app.py
+git add app.py && git commit -m "test: token temporaire"
 
 # Le supprimer dans le commit suivant
-git revert HEAD --no-edit
-git push
+git revert HEAD --no-edit && git push
 ```
 
-Observez : **TruffleHog détecte le secret dans l'historique** même après suppression.
-
-**Conclusion** : il faut révoquer le token sur GitHub, pas juste le supprimer du code.
-
-### 4.2 Créer une Pull Request bloquée
-
-```bash
-git checkout -b feature/nouvelle-api
-# Réintroduire une concaténation SQL
-git add app.py && git commit -m "perf: refacto requête abonnés"
-git push origin feature/nouvelle-api
-```
-
-Ouvrez une PR → Semgrep bloque automatiquement le merge.
+TruffleHog détecte le token dans l'historique malgré la suppression.
+**Conclusion** : il faut révoquer le token sur GitHub, pas juste le supprimer.
 
 ---
 
 ## Bilan
 
-| Ce que vous avez mis en place | Impact en production Free |
-|-------------------------------|--------------------------|
-| **Gitleaks** | Bloque les tokens/passwords avant le push |
-| **TruffleHog** | Audite tout l'historique, détecte les secrets oubliés |
-| **Semgrep** | Arrête les injections SQL et les mauvaises pratiques |
-| **pip-audit** | Veille CVE en continu sur les dépendances |
-| **Trivy** | Garantit que les images déployées sont sans CVE critiques |
-| **PR bloquée** | Aucune régression sécurité ne peut être mergée |
+| Mis en place | Impact chez Free Mobile |
+|---|---|
+| **Gitleaks** | Bloque les credentials avant le push |
+| **TruffleHog** | Audite l'historique, rien ne passe inaperçu |
+| **Semgrep** | Stoppe les injections SQL avant la prod |
+| **pip-audit** | Veille CVE sur les dépendances en continu |
+| **Trivy** | Garantit des images sans CVE critiques |
 
 ---
 

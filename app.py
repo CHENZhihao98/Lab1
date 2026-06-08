@@ -96,6 +96,127 @@ def make_jwt(payload: dict) -> str:
     return f"{header}.{body}.{sig}"
 
 
+
+# =============================================================================
+# ROUTES API — FAILLES À DÉTECTER ET CORRIGER (Objectifs 1 & 3)
+# =============================================================================
+
+@app.route("/subscriber/search")
+def subscriber_search():
+    # FAILLE — SQL injection sur le MSISDN (numéro mobile)
+    # Exploit : /subscriber/search?msisdn=0612345678' OR '1'='1
+    msisdn = request.args.get("msisdn", "")
+    conn   = get_db()
+    query  = "SELECT id,msisdn,iccid,name,email,plan,data_used_gb,status FROM subscribers WHERE msisdn = '" + msisdn + "'"
+    rows   = conn.execute(query).fetchall()
+    conn.close()
+    keys = ["id","msisdn","iccid","name","email","plan","data_used_gb","status"]
+    return jsonify([dict(zip(keys, r)) for r in rows])
+
+
+@app.route("/sim/info")
+def sim_info():
+    iccid = request.args.get("iccid", "")
+    conn  = get_db()
+    row   = conn.execute(
+        "SELECT msisdn,name,plan,status,roaming FROM subscribers WHERE iccid = ?", (iccid,)
+    ).fetchone()
+    conn.close()
+    if not row:
+        return jsonify({"error": "SIM introuvable"}), 404
+    return jsonify({
+        "iccid":   iccid,
+        "msisdn":  row[0],
+        "owner":   row[1],
+        "plan":    row[2],
+        "status":  row[3],
+        "roaming": bool(row[4]),
+        "network": "Free Mobile",
+        "imsi_prefix": "20815",
+    })
+
+
+@app.route("/network/cell")
+def network_cell():
+    cell_id = request.args.get("id", "")
+    conn    = get_db()
+    row     = conn.execute(
+        "SELECT site,tech,region,status,load_pct FROM network_cells WHERE cell_id = ?", (cell_id,)
+    ).fetchone()
+    conn.close()
+    if not row:
+        return jsonify({"error": "Cellule introuvable"}), 404
+    return jsonify({
+        "cell_id": cell_id,
+        "site":    row[0],
+        "tech":    row[1],
+        "region":  row[2],
+        "status":  row[3],
+        "load_pct": row[4],
+        "bands": ["n78","n1"] if "5G" in row[1] else ["B3","B7","B20"],
+    })
+
+
+@app.route("/auth/token")
+def auth_token():
+    msisdn = request.args.get("msisdn", "")
+    conn   = get_db()
+    row    = conn.execute("SELECT id,name,plan FROM subscribers WHERE msisdn = ?", (msisdn,)).fetchone()
+    conn.close()
+    if not row:
+        return jsonify({"error": "Abonné introuvable"}), 404
+    token = make_jwt({"sub": str(row[0]), "msisdn": msisdn, "name": row[1], "plan": row[2]})
+    return jsonify({"access_token": token, "token_type": "Bearer", "expires_in": 3600})
+
+
+@app.route("/internal/config")
+def internal_config():
+    # FAILLE — expose tous les credentials sans authentification
+    return jsonify({
+        "provisioning_token":   PROVISIONING_TOKEN,
+        "jwt_secret":           JWT_SECRET,
+        "cdr_db_host":          "cdr-mysql-prod-01.infra.free.fr",
+        "cdr_db_password":      CDR_DB_PASSWORD,
+        "mvno_partner_key":     MVNO_PARTNER_KEY,
+        "environment":          "production",
+    })
+
+
+@app.route("/cdr/storage")
+def cdr_storage():
+    # FAILLE — expose les credentials AWS des CDR (enregistrements d'appels)
+    return jsonify({
+        "status":                "ok",
+        "bucket":                "freemobile-cdr-prod-eu-west-3",
+        "region":                "eu-west-3",
+        "aws_access_key_id":     AWS_ACCESS_KEY_ID,
+        "aws_secret_access_key": AWS_SECRET_ACCESS_KEY,
+        "records_today":         14_820_441,
+        "size_tb":               2.4,
+    })
+
+
+@app.route("/health")
+def health():
+    # FAILLE RGPD — expose des données abonné dans le healthcheck
+    conn = get_db()
+    last = conn.execute(
+        "SELECT name, email, msisdn FROM subscribers ORDER BY id DESC LIMIT 1"
+    ).fetchone()
+    conn.close()
+    return jsonify({
+        "status":          "ok",
+        "last_subscriber": {"name": last[0], "email": last[1], "msisdn": last[2]},
+    })
+
+
+
+
+# =============================================================================
+# INTERFACE WEB — Tableau de bord, IP Manager, Lab Guide
+# (Ne pas modifier — ces routes sont là pour la démo visuelle)
+# =============================================================================
+
 # ─── PAGE D'ACCUEIL ───────────────────────────────────────────────────────────
 
 @app.route("/")
@@ -265,8 +386,6 @@ def index():
 </body>
 </html>""")
 
-
-# ─── ENDPOINTS API ────────────────────────────────────────────────────────────
 
 @app.route("/ip-manager")
 def ip_manager():
@@ -1058,114 +1177,6 @@ git commit -m <span class="st">"fix: clé AWS chargée depuis variable d'environ
 </body>
 </html>""")
 
-
-@app.route("/subscriber/search")
-def subscriber_search():
-    # FAILLE — SQL injection sur le MSISDN (numéro mobile)
-    # Exploit : /subscriber/search?msisdn=0612345678' OR '1'='1
-    msisdn = request.args.get("msisdn", "")
-    conn   = get_db()
-    query  = "SELECT id,msisdn,iccid,name,email,plan,data_used_gb,status FROM subscribers WHERE msisdn = '" + msisdn + "'"
-    rows   = conn.execute(query).fetchall()
-    conn.close()
-    keys = ["id","msisdn","iccid","name","email","plan","data_used_gb","status"]
-    return jsonify([dict(zip(keys, r)) for r in rows])
-
-
-@app.route("/sim/info")
-def sim_info():
-    iccid = request.args.get("iccid", "")
-    conn  = get_db()
-    row   = conn.execute(
-        "SELECT msisdn,name,plan,status,roaming FROM subscribers WHERE iccid = ?", (iccid,)
-    ).fetchone()
-    conn.close()
-    if not row:
-        return jsonify({"error": "SIM introuvable"}), 404
-    return jsonify({
-        "iccid":   iccid,
-        "msisdn":  row[0],
-        "owner":   row[1],
-        "plan":    row[2],
-        "status":  row[3],
-        "roaming": bool(row[4]),
-        "network": "Free Mobile",
-        "imsi_prefix": "20815",
-    })
-
-
-@app.route("/network/cell")
-def network_cell():
-    cell_id = request.args.get("id", "")
-    conn    = get_db()
-    row     = conn.execute(
-        "SELECT site,tech,region,status,load_pct FROM network_cells WHERE cell_id = ?", (cell_id,)
-    ).fetchone()
-    conn.close()
-    if not row:
-        return jsonify({"error": "Cellule introuvable"}), 404
-    return jsonify({
-        "cell_id": cell_id,
-        "site":    row[0],
-        "tech":    row[1],
-        "region":  row[2],
-        "status":  row[3],
-        "load_pct": row[4],
-        "bands": ["n78","n1"] if "5G" in row[1] else ["B3","B7","B20"],
-    })
-
-
-@app.route("/auth/token")
-def auth_token():
-    msisdn = request.args.get("msisdn", "")
-    conn   = get_db()
-    row    = conn.execute("SELECT id,name,plan FROM subscribers WHERE msisdn = ?", (msisdn,)).fetchone()
-    conn.close()
-    if not row:
-        return jsonify({"error": "Abonné introuvable"}), 404
-    token = make_jwt({"sub": str(row[0]), "msisdn": msisdn, "name": row[1], "plan": row[2]})
-    return jsonify({"access_token": token, "token_type": "Bearer", "expires_in": 3600})
-
-
-@app.route("/internal/config")
-def internal_config():
-    # FAILLE — expose tous les credentials sans authentification
-    return jsonify({
-        "provisioning_token":   PROVISIONING_TOKEN,
-        "jwt_secret":           JWT_SECRET,
-        "cdr_db_host":          "cdr-mysql-prod-01.infra.free.fr",
-        "cdr_db_password":      CDR_DB_PASSWORD,
-        "mvno_partner_key":     MVNO_PARTNER_KEY,
-        "environment":          "production",
-    })
-
-
-@app.route("/cdr/storage")
-def cdr_storage():
-    # FAILLE — expose les credentials AWS des CDR (enregistrements d'appels)
-    return jsonify({
-        "status":                "ok",
-        "bucket":                "freemobile-cdr-prod-eu-west-3",
-        "region":                "eu-west-3",
-        "aws_access_key_id":     AWS_ACCESS_KEY_ID,
-        "aws_secret_access_key": AWS_SECRET_ACCESS_KEY,
-        "records_today":         14_820_441,
-        "size_tb":               2.4,
-    })
-
-
-@app.route("/health")
-def health():
-    # FAILLE RGPD — expose des données abonné dans le healthcheck
-    conn = get_db()
-    last = conn.execute(
-        "SELECT name, email, msisdn FROM subscribers ORDER BY id DESC LIMIT 1"
-    ).fetchone()
-    conn.close()
-    return jsonify({
-        "status":          "ok",
-        "last_subscriber": {"name": last[0], "email": last[1], "msisdn": last[2]},
-    })
 
 
 if __name__ == "__main__":

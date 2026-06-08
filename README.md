@@ -122,19 +122,23 @@ En production chez Free, cette requête exposerait des **millions d'abonnés** :
 
 ---
 
-## Acte 2 — Observer le pipeline en échec (20 min)
+## Acte 2 — Construire le pipeline CI (20 min)
 
-### 2.1 Les 5 jobs CI
+### 2.1 Votre mission
 
-Rendez-vous sur **https://github.com/RomdhaniYacine/Lab1/actions**
+Ouvrez `.github/workflows/security.yml`.
 
-| # | Job | Outil | Ce qu'il détecte |
-|---|-----|-------|-----------------|
-| 1 | Secrets (Gitleaks) | **Gitleaks** | Patterns connus : tokens, passwords, clés AWS |
-| 2 | Secrets historique (TruffleHog) | **TruffleHog** | Entropie élevée + scan de tout l'historique git |
+Le pipeline contient **5 jobs avec des `TODO`**. Votre mission est de les compléter en vous appuyant sur les liens de documentation fournis dans chaque job.
+
+| # | Job | Outil | Ce qu'il doit détecter |
+|---|-----|-------|------------------------|
+| 1 | Secrets (Gitleaks) | **Gitleaks** | Tokens, passwords, clés AWS dans le code |
+| 2 | Secrets historique (TruffleHog) | **TruffleHog** | Secrets dans tout l'historique git |
 | 3 | SAST (Semgrep) | **Semgrep** | Injection SQL, debug=True, mauvaises pratiques |
-| 4 | Dépendances (pip-audit) | **pip-audit** | CVE dans flask 2.0.1, requests 2.19.1, PyYAML 5.1 |
-| 5 | Image conteneur (Trivy) | **Trivy** | CVE HIGH/CRITICAL dans python:3.9 |
+| 4 | Dépendances (pip-audit) | **pip-audit** | CVE dans les dépendances Python |
+| 5 | Image conteneur (Trivy) | **Trivy** | CVE HIGH/CRITICAL dans l'image Docker |
+
+Une fois complété, pushez et observez les jobs s'exécuter sur **https://github.com/RomdhaniYacine/Lab1/actions**
 
 ### 2.2 Gitleaks vs TruffleHog — quelle différence ?
 

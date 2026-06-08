@@ -4,71 +4,90 @@ on: [push, pull_request]
 
 jobs:
 
-  # ─── JOB 1 ── Gitleaks : patterns de secrets connus ─────────────────────────
+  # ─── JOB 1 ── Gitleaks ───────────────────────────────────────────────────────
+  # Objectif : détecter les secrets commités dans le code source
+  # Documentation : https://github.com/gitleaks/gitleaks-action
   gitleaks:
     name: "1 — Secrets (Gitleaks)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0          # Récupère tout l'historique git (obligatoire pour Gitleaks)
 
-  # ─── JOB 2 ── TruffleHog : entropie + historique git complet ────────────────
+      # TODO : ajouter l'action Gitleaks ici
+      # Bonne pratique : passer GITHUB_TOKEN en variable d'environnement
+      # Action disponible sur : gitleaks/gitleaks-action@v2
+
+
+  # ─── JOB 2 ── TruffleHog ─────────────────────────────────────────────────────
+  # Objectif : scanner l'historique git complet avec détection par entropie
+  # Documentation : https://github.com/trufflesecurity/trufflehog
   trufflehog:
     name: "2 — Secrets historique (TruffleHog)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-      - name: TruffleHog — scan complet du dépôt
-        uses: trufflesecurity/trufflehog@main
-        with:
-          path: ./
-          base: ""
-          head: HEAD
-          extra_args: --only-verified
+          fetch-depth: 0          # Indispensable — TruffleHog scanne tout l'historique
 
-  # ─── JOB 3 ── Semgrep : analyse statique du code (SAST) ─────────────────────
+      # TODO : ajouter l'action TruffleHog ici
+      # Bonne pratique : utiliser --only-verified pour limiter les faux positifs
+      # Action disponible sur : trufflesecurity/trufflehog@main
+
+
+  # ─── JOB 3 ── Semgrep (SAST) ─────────────────────────────────────────────────
+  # Objectif : analyse statique du code — injection SQL, debug=True, mauvaises pratiques
+  # Documentation : https://semgrep.dev/docs/semgrep-ci/
   semgrep:
     name: "3 — SAST (Semgrep)"
     runs-on: ubuntu-latest
-    container:
-      image: returntocorp/semgrep
+
+    # TODO : ajouter le container Semgrep
+    # Image Docker officielle : returntocorp/semgrep
+
     steps:
       - uses: actions/checkout@v4
-      - name: Semgrep — audit sécurité Python
-        run: semgrep --config "p/python" --config "p/security-audit" --error .
 
-  # ─── JOB 4 ── pip-audit : CVE dans les dépendances Python ───────────────────
+      # TODO : lancer Semgrep avec les règles python et security-audit
+      # Bonne pratique : utiliser --error pour faire échouer le job si des problèmes sont détectés
+      # Commande : semgrep --config "p/python" --config "p/security-audit" --error .
+
+
+  # ─── JOB 4 ── pip-audit ──────────────────────────────────────────────────────
+  # Objectif : détecter les CVE dans les dépendances Python
+  # Documentation : https://pypi.org/project/pip-audit/
   pip-audit:
     name: "4 — Dépendances (pip-audit)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: pip-audit — scan CVE dépendances
-        run: |
-          pip install pip-audit
-          pip-audit -r requirements.txt
 
-  # ─── JOB 5 ── Trivy : CVE dans l'image Docker ───────────────────────────────
+      # TODO : configurer Python
+      # Action disponible : actions/setup-python@v5
+      # Bonne pratique : utiliser python-version: "3.11" ou supérieur
+
+      # TODO : installer et lancer pip-audit
+      # Commandes à compléter :
+      # pip install pip-audit
+      # pip-audit -r requirements.txt
+
+
+  # ─── JOB 5 ── Trivy ──────────────────────────────────────────────────────────
+  # Objectif : scanner l'image Docker pour détecter les CVE HIGH et CRITICAL
+  # Documentation : https://github.com/aquasecurity/trivy-action
   trivy:
     name: "5 — Image conteneur (Trivy)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Build image
-        run: docker build -t free-lab:ci .
-      - name: Trivy — scan image Docker
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: free-lab:ci
-          exit-code: "1"
-          severity: "HIGH,CRITICAL"
-          ignore-unfixed: true
+
+      # TODO : builder l'image Docker
+      # Commande : docker build -t free-lab:ci .
+
+      # TODO : ajouter l'action Trivy ici
+      # Action disponible : aquasecurity/trivy-action@master
+      # Bonne pratique :
+      #   - exit-code: "1"  → fait échouer le job si des CVE sont détectées
+      #   - severity: "HIGH,CRITICAL"  → seulement les CVE critiques
+      #   - ignore-unfixed: true  → ignorer les CVE sans correctif disponible

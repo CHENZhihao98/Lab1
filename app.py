@@ -636,7 +636,7 @@ chmod +x .git/hooks/pre-commit</pre>
 
       <div class="code-block">
         <div class="code-header"><span class="code-lang">python</span></div>
-        <pre>STRIPE_KEY <span class="op">=</span> <span class="st">"sk_live_4eC39HqLyjWDarjtT1zdp7dc"</span>  <span class="cm"># clé fictive</span></pre>
+        <pre>STRIPE_KEY <span class="op">=</span> <span class="st">"LAB_sk_live_4eC39HqLyjWDarjtT1zdp7dc"</span>  <span class="cm"># clé fictive</span></pre>
       </div>
 
       <div class="code-block">

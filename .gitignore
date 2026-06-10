@@ -5,5 +5,4 @@ freemobile.db
 .env
 .secrets.baseline
 gitleaks-report.json
-.env
-.env
+.idea/

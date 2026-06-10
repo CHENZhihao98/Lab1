@@ -152,9 +152,6 @@ git add test_hook.py
 git commit -m "test: vérification du hook"
 # → Le commit doit être bloqué par Gitleaks
 
-# Nettoyer
-rm test_hook.py
-git reset HEAD test_hook.py 2>/dev/null || true
 ```
 
 **Questions :**

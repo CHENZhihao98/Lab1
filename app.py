@@ -14,14 +14,14 @@ load_dotenv();
 # ============================================================
 
 FREEMOBILE_API_KEY = os.environ.get("FREEMOBILE_API_KEY")
-JWT_SIGNING_SECRET = os.environ.get("FREEMOBILE_API_KEY")
-DB_PASSWORD = os.environ.get("FREEMOBILE_API_KEY")
-AWS_ACCESS_KEY_ID = os.environ.get("FREEMOBILE_API_KEY")
-AWS_SECRET_ACCESS_KEY = os.environ.get("FREEMOBILE_API_KEY")
-SMTP_PASSWORD = os.environ.get("FREEMOBILE_API_KEY")
-STRIPE_SECRET_KEY = os.environ.get("FREEMOBILE_API_KEY")
-OAUTH_CLIENT_SECRET = os.environ.get("FREEMOBILE_API_KEY")
-TWILIO_AUTH_TOKEN = os.environ.get("FREEMOBILE_API_KEY")
+JWT_SIGNING_SECRET = os.environ.get("JWT_SIGNING_SECRET")
+DB_PASSWORD = os.environ.get("DB_PASSWORD")
+AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY")
+OAUTH_CLIENT_SECRET = os.environ.get("OAUTH_CLIENT_SECRET")
+TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN")
 
 DB_PATH = "freemobile.db"
 

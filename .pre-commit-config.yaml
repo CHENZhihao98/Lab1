@@ -4,5 +4,5 @@ repos:
       - id: gitleaks
         name: Detect hardcoded secrets
         language: system
-        entry: gitleaks protect --staged --redact
+        entry: gitleaks protect --staged --redact --verbose
         pass_filenames: false

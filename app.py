@@ -1,22 +1,27 @@
 import sqlite3
 from flask import Flask, request, jsonify
 
+import os
+from dotenv import load_dotenv
+
 app = Flask(__name__)
+
+load_dotenv();
 
 # ============================================================
 # SECRETS HARDCODÉS — Lab DevSecOps Free Mobile
 # Objectif : détecter ces secrets avec Gitleaks, TruffleHog et Bandit
 # ============================================================
 
-FREEMOBILE_API_KEY    = "fm-api-prod-4f8a2c1e9b3d7f0566ae12bc"
-JWT_SIGNING_SECRET    = "fm-jwt-s1gn1ng-k3y-pr0d-2024-!xZ9"
-DB_PASSWORD           = "Fr33M0b!leProd2024#SQL"
-AWS_ACCESS_KEY_ID     = "AKIAIOSFODNN7FREEMOB1"
-AWS_SECRET_ACCESS_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYFREEMOBILE"
-SMTP_PASSWORD         = "smtp-relay-free-m0bile-2024"
-STRIPE_SECRET_KEY     = "fm-payments-prod-secret-k3y-9aZ3kX2w"
-OAUTH_CLIENT_SECRET   = "oauth2-sso-freemobile-client-secret-v2"
-TWILIO_AUTH_TOKEN     = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+FREEMOBILE_API_KEY = os.environ.get("FREEMOBILE_API_KEY")
+JWT_SIGNING_SECRET = os.environ.get("FREEMOBILE_API_KEY")
+DB_PASSWORD = os.environ.get("FREEMOBILE_API_KEY")
+AWS_ACCESS_KEY_ID = os.environ.get("FREEMOBILE_API_KEY")
+AWS_SECRET_ACCESS_KEY = os.environ.get("FREEMOBILE_API_KEY")
+SMTP_PASSWORD = os.environ.get("FREEMOBILE_API_KEY")
+STRIPE_SECRET_KEY = os.environ.get("FREEMOBILE_API_KEY")
+OAUTH_CLIENT_SECRET = os.environ.get("FREEMOBILE_API_KEY")
+TWILIO_AUTH_TOKEN = os.environ.get("FREEMOBILE_API_KEY")
 
 DB_PATH = "freemobile.db"
 

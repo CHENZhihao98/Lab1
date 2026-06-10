@@ -1,7 +1,18 @@
 name: "Détection de secrets — Gitleaks"
 
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 4 * * *" # run once a day at 4 AM
 
 jobs:
   gitleaks:
-    # à compléter
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v3
